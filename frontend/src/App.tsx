@@ -2,14 +2,8 @@ import { useEffect, useState } from 'react'
 import './App.css'
 import { api, getToken, setToken } from './api'
 import AuthForm from './AuthForm'
-
-type Task = {
-  id: number
-  title: string
-  description: string | null
-  status: 'TODO' | 'IN_PROGRESS' | 'DONE'
-  createdAt: string
-}
+import Board from './Board'
+import type { Status, Task } from './types'
 
 function App() {
   const [loggedIn, setLoggedIn] = useState(!!getToken())
@@ -58,9 +52,32 @@ function App() {
     await loadTasks()
   }
 
+  async function handleMove(id: number, status: Status) {
+    const previous = tasks
+    setTasks(tasks.map((t) => (t.id === id ? { ...t, status } : t)))
+    const res = await api(`/tasks/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    })
+    if (!res.ok) {
+      setTasks(previous)
+      setError('Не удалось переместить задачу')
+    }
+  }
+
+  async function handleDelete(id: number) {
+    const previous = tasks
+    setTasks(tasks.filter((t) => t.id !== id))
+    const res = await api(`/tasks/${id}`, { method: 'DELETE' })
+    if (!res.ok) {
+      setTasks(previous)
+      setError('Не удалось удалить задачу')
+    }
+  }
+
   if (!loggedIn) {
     return (
-      <div className="app">
+      <div className="app narrow">
         <h1>Task Tracker</h1>
         <AuthForm onAuth={() => setLoggedIn(true)} />
       </div>
@@ -84,14 +101,7 @@ function App() {
         <button type="submit">Добавить</button>
       </form>
       {error && <p className="error">{error}</p>}
-      <ul className="list">
-        {tasks.map((t) => (
-          <li key={t.id} className="task">
-            <span>{t.title}</span>
-            <span className="status">{t.status}</span>
-          </li>
-        ))}
-      </ul>
+      <Board tasks={tasks} onMove={handleMove} onDelete={handleDelete} />
     </div>
   )
 }

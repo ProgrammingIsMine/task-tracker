@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -32,5 +33,22 @@ public class TaskController {
         task.setDescription(req.description());
         task.setOwner(owner);
         return ResponseEntity.status(HttpStatus.CREATED).body(tasks.save(task));
+    }
+
+    @PatchMapping("/{id}")
+    public Task updateStatus(@PathVariable Long id, @Valid @RequestBody TaskStatusRequest req,
+                             Authentication auth) {
+        Task task = tasks.findByIdAndOwnerEmail(id, auth.getName())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        task.setStatus(req.status());
+        return tasks.save(task);
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable Long id, Authentication auth) {
+        Task task = tasks.findByIdAndOwnerEmail(id, auth.getName())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        tasks.delete(task);
     }
 }
