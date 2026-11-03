@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import './App.css'
-
-const API_URL = 'http://localhost:8081/api/tasks'
+import { api, getToken, setToken } from './api'
+import AuthForm from './AuthForm'
 
 type Task = {
   id: number
@@ -12,27 +12,44 @@ type Task = {
 }
 
 function App() {
+  const [loggedIn, setLoggedIn] = useState(!!getToken())
   const [tasks, setTasks] = useState<Task[]>([])
   const [title, setTitle] = useState('')
   const [error, setError] = useState('')
 
+  function logout() {
+    setToken(null)
+    setTasks([])
+    setLoggedIn(false)
+  }
+
   async function loadTasks() {
-    const res = await fetch(API_URL)
+    const res = await api('/tasks')
+    if (res.status === 401) {
+      logout()
+      return
+    }
     setTasks(await res.json())
   }
 
   useEffect(() => {
-    loadTasks().catch(() => setError('Не удалось загрузить задачи'))
-  }, [])
+    if (loggedIn) {
+      loadTasks().catch(() => setError('Не удалось загрузить задачи'))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loggedIn])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
-    const res = await fetch(API_URL, {
+    const res = await api('/tasks', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title }),
     })
+    if (res.status === 401) {
+      logout()
+      return
+    }
     if (!res.ok) {
       setError('Название задачи не может быть пустым')
       return
@@ -41,9 +58,23 @@ function App() {
     await loadTasks()
   }
 
+  if (!loggedIn) {
+    return (
+      <div className="app">
+        <h1>Task Tracker</h1>
+        <AuthForm onAuth={() => setLoggedIn(true)} />
+      </div>
+    )
+  }
+
   return (
     <div className="app">
-      <h1>Task Tracker</h1>
+      <div className="header">
+        <h1>Task Tracker</h1>
+        <button className="link" onClick={logout}>
+          Выйти
+        </button>
+      </div>
       <form className="form" onSubmit={handleSubmit}>
         <input
           value={title}
