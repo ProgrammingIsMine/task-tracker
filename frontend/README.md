@@ -1,5 +1,7 @@
 # Task Tracker
 
+![CI](https://github.com/ProgrammingIsMine/task-tracker/actions/workflows/ci.yml/badge.svg)
+
 A full-stack Kanban task tracker: register, log in, and manage your own tasks on a drag-and-drop board.
 
 ![Board](docs/board.png)
@@ -70,3 +72,5 @@ npm run dev
 - CI with GitHub Actions
 - Task editing, descriptions and ordering inside a column
 - Deployment
+
+
