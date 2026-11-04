@@ -1,75 +1,72 @@
-# React + TypeScript + Vite
+# Task Tracker
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A full-stack Kanban task tracker: register, log in, and manage your own tasks on a drag-and-drop board.
 
-Currently, two official plugins are available:
+![Board](docs/board.png)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Features
 
-## React Compiler
+- JWT authentication: register and log in, passwords hashed with BCrypt
+- Every user sees only their own tasks (ownership is enforced on the server)
+- Kanban board with three columns (To do, In progress, Done) and drag-and-drop between them
+- Create and delete tasks, with server-side validation
+- Database schema managed by Flyway migrations
+- Whole stack starts with a single `docker compose up`
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+![Login](docs/login.png)
 
-## Expanding the ESLint configuration
+## Tech stack
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+| Layer | Technologies |
+|---|---|
+| Backend | Java 21, Spring Boot 4, Spring Security, Spring Data JPA, Flyway |
+| Database | PostgreSQL 17 |
+| Frontend | React, TypeScript, Vite, dnd-kit |
+| Infrastructure | Docker, Docker Compose, nginx |
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Run it
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+Requirements: Docker Desktop.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+git clone https://github.com/ProgrammingIsMine/task-tracker.git
+cd task-tracker
+docker compose up --build
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+Then open http://localhost:5173 and register a new account.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+The API is available at http://localhost:8081.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## API
 
+| Method | Path | Description | Auth |
+|---|---|---|---|
+| POST | `/api/auth/register` | Create an account, returns a JWT | no |
+| POST | `/api/auth/login` | Log in, returns a JWT | no |
+| GET | `/api/tasks` | List the current user's tasks | yes |
+| POST | `/api/tasks` | Create a task | yes |
+| PATCH | `/api/tasks/{id}` | Change a task's status | yes |
+| DELETE | `/api/tasks/{id}` | Delete a task | yes |
+
+Authenticated requests send the header `Authorization: Bearer <token>`.
+
+## Local development
+
+```bash
+docker compose up -d db
+
+cd backend/backend
+./mvnw spring-boot:run
+
+cd frontend
+npm install
+npm run dev
 ```
+
+## Roadmap
+
+- Integration tests (JUnit, Testcontainers)
+- CI with GitHub Actions
+- Task editing, descriptions and ordering inside a column
+- Deployment
